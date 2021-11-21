@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+    <title>Experiment Manual Tracking</title>
+    <script src="jspsych-6.3.1/jspsych.js"></script>
+    <script src="jspsych-6.3.1/plugins/jspsych-instructions.js"></script>
+    <script src="jspsych-6.3.1/plugins/jspsych-fullscreen.js"></script>
+    <script src="jspsych-6.3.1/plugins/jspsych-html-button-response.js"></script>
+    <script src="jspsych-6.3.1/plugins/jspsych-survey-text.js"></script>
+    <!-- custom scripts -->
+    <script src="jspsych-6.3.1/plugins/custom-manual-tracking.js"></script>
+    <!-- basic values -->
+    <script src="common_vars.js"></script>
+    <link href="styles.css" rel="stylesheet" type="text/css">
+    <script src="objects.js"></script>
+    <script type="text/javascript" src="loops.js"></script>
+    <!-- jatos import -->
+    <script src="jatos.js"></script>
+    <!-- css import -->
+    <link rel="stylesheet" type="text/css" href="jspsych-6.3.1/css/jspsych.css">
+    <!-- use the line below to prevent user scaling and marking -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+</head>
+
+<body bgcolor='gray'>
+<script>
+    // define variables for the experiment
+    let nTrials = 48; // number of trials per condition
+    let nTrialsTraining = 1; // number of trials per condition during training
+    let trialDuration = 2000; //duration of the trial (same as in Spering et al)
+    let side = ['l', 'r']; // first side where the stimulus appears. l = left, r = right (relative to center)
+    let angle = [0, 45, 90, 135, 180, 225, 270, 315]; // in which direction the stimulus moves (same as in Spering et al)
+    let angleTraining = [0, 90, 180, 270]; // the angles shown during training
+    let splitTime = trialDuration/2; // the mean time when the stimulus splits (half the full duration)
+    let splitJitter = 200; // jitter when the stimulus splits (the random jitter in positive and negative direction)
+    let waitAfter = 500; // how long we will wait at the end of the trial in ms
+    let fixTime = 500; // how long the participant keeps their hand on the dot before it moves
+    let speed = ppdva * 10.5; // how many pixels the stimulus moves in 1 second
+    let shiftBeforeStart = ppdva; // by how much the dot jumps outwards before starting to move
+    let waitTillBreak = 5000; // indicates how long we wait before the dot is touched
+
+    // ask for fullscreen permission
+    let confirm_fullscreen = {
+        type: "fullscreen",
+        message: ["<p>Click below to change to fullscreen mode.</p>"],
+        fullscreen_mode: true,
+        button_label: 'Fullscreen',
+        data: {
+            test_part: 'fullscreen_request',
+        }
+    };
+    timeline.push(confirm_fullscreen);
+
+    // display instructions
+    let welcome = {
+        type: "instructions",
+        pages:["<p>Welcome to the experiment!</p>" +
+                "<p>Please run this experiment on a touchscreen device in your preferred broweser.</p>",
+                "<p>Make sure you sit comfortable, and your phone is ~50 cm away from you.</p>",
+                "<p>Your task is easy: You'll see a white dot on the screen. Place your finger " +
+                "on the dot to start the trial.</p>",
+                "<p>Keep your finger on the dot. As soon as it starts moving, follow it with your finger. " +
+                "Don't lift your finger from the touch screen.</p>",
+                "<p>Sometimes, a second white dot splits off from the first dot and moves in a different " +
+                "direction. Keep following the first dot and ignore the second dot.</p>",
+                "<p>We will start with a quick training block.</p>"],
+        show_clickable_nav: true,
+        button_label_next: 'Ok. Continue >',
+        post_trial_gap: 200,
+        data: {
+            test_part: 'general_welcome',
+        }
+    };
+    timeline.push(welcome);
+
+    // load trial structure for training
+    let testingVariables = create_trials(nTrials, trialDuration, side, angleTraining, splitTime, splitJitter, waitAfter, fixTime);
+    // load trial structure for testing
+    let timelineVariables = create_trials(nTrials, trialDuration, side, angle, splitTime, splitJitter, waitAfter, fixTime);
+
+    // define the main trial for the experiment
+    let trial = {
+        type: "manual-tracking", // calls the custom plugin
+        stimulus: jsPsych.timelineVariable('visibleTarget'), // the visible buttons are the white dot
+        responseArea: jsPsych.timelineVariable('invisibleTarget'), // the invisible button is the area around the target where a touch response is accepted
+        side: jsPsych.timelineVariable('side'), // indicates if the side is left or right
+        angle: jsPsych.timelineVariable('angle'), // indicates in which angle the new dot splits off
+        splitTime: jsPsych.timelineVariable('splitTime'), // indicates when the new dot splits off
+        trial_duration: trialDuration, // indicates how long the trial lasts in total
+        waitAfter: waitAfter, // how long to wait after the trial ended before the next trial starts
+        fixTime: jsPsych.timelineVariable('fixTime'), // indicates how long the participants keeps their finger in the start position before the dot starts moving
+        waitTillBreak: waitTillBreak, // indicates how long we wait before the dot is touched
+        speed: speed, // indicates how many pixels/second the dot moves
+        shiftBeforeStart: shiftBeforeStart, // how much to shift the dot outwards before it moves inwards
+        dummy: true,
+        calibration_marker: true,
+        data: {
+            // assign relevant data
+            test_part: 'trial', // the part of the experiment
+            angle: jsPsych.timelineVariable('angle'),  // the angle at which the distractor moved away
+            splitTime: jsPsych.timelineVariable('splitTime'), // the time when the distractor moved away
+            side: jsPsych.timelineVariable('side'), // the side where the distractor appeared
+            trialID: jsPsych.timelineVariable('trialID'), // the ID of the trial
+
+        },
+        on_finish: function (data) {
+            // evaluate if the there were any mistakes and if the trial need repetition
+            interruptedResponse = data.interruptedResponse; // were the answers given in order
+            breakResponse = data.breakResponse; // was the response fast enough
+
+            // if out of order or late response, create new T object and push it to repeat_IDs
+            // evaluate only for trials that were shown
+            if (interruptedResponse || breakResponse) {
+                // if there was any error
+                // get the trial ID
+                if (!repeat_IDs.includes(jsPsych.timelineVariable('trialID'))) {
+                    repeat_IDs.push(jsPsych.timelineVariable('trialID'));
+                }
+            } else {
+                repeat_IDs = repeat_IDs.filter(function (item) {
+                    return item !== jsPsych.timelineVariable('trialID');
+                });
+            }
+        }
+    };
+
+    // display feedback
+    let feedback = {
+        type: 'html-button-response',
+        trialID: jsPsych.timelineVariable('trialID'),
+        stimulus: function () {
+            // evaluate which feedback should be shown
+            if (interruptedResponse) {
+                return "<p>Keep your finger on the moving target</p>"
+            } else if (breakResponse) {
+                return "<p>Let's do a break.</p>"
+            } else {
+                return "<p>Well done.</p>"
+            }
+        },
+        post_trial_gap: 0, // needs to be zero to avoid waiting times when the trial is skipped
+        choices: [''], // don't display choices
+        button_html: '', // don't display buttons
+        trial_duration: 1500, // display the feedback for 1500 ms
+        data: {
+            test_part: 'feedback',
+        },
+    };
+
+    let pause = {
+        type: 'html-button-response',
+        trialID: jsPsych.timelineVariable('trialID'),
+        stimulus: "<p>Take a break. Hit the button below if you want to continue.</p>",
+        choices: ['continue'], // don't display choices
+        data: {
+            test_part: 'break',
+        },
+    };
+
+    let pause_conditional = {
+        timeline: [pause],
+        conditional_function: function(){return breakResponse}
+    };
+
+    let trial_conditional = {
+        timeline: [trial, feedback, pause_conditional],
+        conditional_function: function () {
+            // in this function, we define if we want to run this trial or not
+            // get the id of the current trial
+            let id_here = jsPsych.timelineVariable('trialID');
+            // check if we are past time
+            if (!first_set) {
+                // run the trial if the value is inside the array
+                repeat = repeat_IDs.includes(id_here);
+                // if there are any values in the repeat trial array
+            } else {
+                // this is the first round, we run every trial
+                repeat = true;
+            }
+            return repeat
+        },
+        on_finish: function () {
+            let resultData = jsPsych.data.get().json();
+            jatos.uploadResultFile(resultData, "trialData.json")
+                .catch(() => console.log("File upload failed"));
+        }
+    }
+
+    //define a training procedure
+    let training = {
+        timeline: [trial, feedback, pause_conditional], // one trial and one feedback will be repeated after each other
+        timeline_variables: testingVariables, // our design structure provides the timeline variables
+        randomize_order: true, // our design structure will be repeated in a random order
+    };
+
+    let repeat_training = {
+        type: 'html-button-response',
+        stimulus: "<p>The training is over - would you like to repeat it?.</p>",
+        choices: ['repeat training', 'start experiment'], // don't display choices
+        data: {
+            test_part: 'repeat training',
+        },
+        on_finish: function (data) {
+            if (parseInt(data.response) === 0) {
+                repeatTraining = true;
+            }
+        },
+    };
+
+    let training_loop = {
+        timeline: [training, repeat_training],
+        loop_function: function (){return repeatTraining}
+    };
+    timeline.push(training_loop);
+
+    // define a test procedure
+    let trial_loop = {
+        timeline: [trial_conditional], // one trial and one feedback will be repeated after each other
+        timeline_variables: timelineVariables, // our design structure provides the timeline variables
+        randomize_order: true, // our design structure will be repeated in a random order
+        // this function evaluates if we want to repeat the loop
+        // if it evaluates to true, we repeat the full design matrix
+        loop_function: function () {
+            first_set = false
+            // return true or false
+            return repeat_IDs.length > 0;
+        },
+    };
+    timeline.push(trial_loop);
+
+    // define a timeline that is only executed when the allowed waiting time was not exceeded
+    let conditional_timeline = {
+        timeline: timeline,
+        conditional_function: function () {
+            return true //jatos.studySessionData.totalWaitTime < jatos.studySessionData.allowedWaitTime;
+        },
+    };
+
+    /* start the experiment */
+    // load jatos - I can use jatos functions after this line
+    jatos.onLoad(function () {
+
+        jatos.uploadResultFile(timelineVariables, "allTimelineVariables.json");
+
+        jsPsych.data.addProperties({
+            subject: jatos.workerId, // id of the subject
+            component: 'Trials_Tracking', // name the component
+        });
+
+        jsPsych.init({
+            timeline: [conditional_timeline, pseudo_trial], // use the timeline to run the experiment
+            on_finish: function () {
+                // once the code has run: save the results and call the next jatos component
+                let resultJson = jsPsych.data.get().json();
+                jsPsych.data.displayData('csv');
+                jatos.submitResultData(resultJson, function () {
+                        jatos.startComponentByPos(nextComponentPosition);
+                })
+                    .catch(() => console.log("File upload failed"));
+            }
+        });
+    });
+</script>
+</body>
+</html>

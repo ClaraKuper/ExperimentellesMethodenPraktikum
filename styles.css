@@ -1,0 +1,47 @@
+/* CSS defining the dots styles used in the ManualInhibitionOnline experiment */
+
+dot {
+    position: absolute;
+    display: inline;
+    top: 50%;
+    height: 5px;
+    width: 5px;
+    background-color: #000000;
+    border-radius: 50%;
+    margin-top: -2.5px;
+    margin-left: -2.5px;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+InvisibleDot {
+    position: absolute;
+    display: inline;
+    top: 50%;
+    height: 400px;
+    width: 400px;
+    background-color: #000000;
+    border-radius: 50%;
+    margin-top: -200px;
+    margin-left: -200px;
+    -webkit-touch-callout: none; /* prevent marking on iOS Safari */
+    -webkit-user-select: none; /* prevent marking on Safari */
+    user-select: none;
+}
+
+p {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+img {
+    position: absolute;
+    display: inline;
+    -webkit-touch-callout: none; /* prevent marking on iOS Safari */
+    -webkit-user-select: none; /* prevent marking on Safari */
+    user-select: none;
+}
+
+
