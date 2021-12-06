@@ -252,12 +252,14 @@ jsPsych.plugins["manual-tracking"] = (function() {
         mouse_trace_y: mouse_trace_y,
         interruptedResponse: interruptedResponse,
         pixperrefresh: pixperrefresh,
+        refreshRate: refreshRate,
         angle: angle,
         side: side,
         start_position: start_position,
         splitTime: splitTime,
         fixTime: fixTime,
         speed: speed,
+        subjectID: 'AB',
       };
 
       // clear the display

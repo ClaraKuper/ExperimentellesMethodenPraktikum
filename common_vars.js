@@ -7,8 +7,8 @@ let interruptedResponse; // was the response continuously measurable?
 
 // define objects that are common for all files in the ManualInhibitionOnline experiment
 // load the target stimulus (an svg file with size 20x20, containing a 15x15 image of the stimulus)
-let rightTar = "<div id = 'rightTarDiv'><img src='stimulus.svg' height='42' width='42' class = 'target' style ='transform: translate(300px); position: absolute';></img></div>";
-let leftTar = "<div id = 'leftTarDiv'><img src='stimulus.svg' height='42' width='42' class = 'target' style = 'transform: translate(-300px); position: absolute';></img></div>";
+let rightTar = "<div id = 'rightTarDiv'><img src='./img/stimulus.svg' height='42' width='42' class = 'target' style ='transform: translate(300px); position: absolute';></img></div>";
+let leftTar = "<div id = 'leftTarDiv'><img src='./img/stimulus.svg' height='42' width='42' class = 'target' style = 'transform: translate(-300px); position: absolute';></img></div>";
 
 // the invisible target defines the touchable area around the stimulus
 let rightTarInvisible = "<div id = 'rightTarInvisibleDiv'><InvisibleDot class = 'targetInvisible' style = 'background-color:rgba(56,153,53,0);  transform: translate(200px); '></InvisibleDot></div>";
