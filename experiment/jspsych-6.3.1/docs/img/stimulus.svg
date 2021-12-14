@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="20"
+   height="20"
+   viewBox="0 0 5.2916669 5.2916665"
+   version="1.1"
+   id="svg5"
+   inkscape:version="1.1 (c4e8f9e, 2021-05-24)"
+   sodipodi:docname="stimulus.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview7"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="true"
+     inkscape:document-units="mm"
+     showgrid="false"
+     inkscape:zoom="16.769029"
+     inkscape:cx="8.9748786"
+     inkscape:cy="11.449679"
+     inkscape:window-width="1312"
+     inkscape:window-height="762"
+     inkscape:window-x="0"
+     inkscape:window-y="25"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="layer1"
+     units="px"
+     height="75.59055px"
+     width="20px" />
+  <defs
+     id="defs2">
+    <filter
+       inkscape:collect="always"
+       style="color-interpolation-filters:sRGB"
+       id="filter1782"
+       x="-0.26785999"
+       y="-0.26784532"
+       width="1.53572"
+       height="1.5356906">
+      <feGaussianBlur
+         inkscape:collect="always"
+         stdDeviation="0.33072916"
+         id="feGaussianBlur1784" />
+    </filter>
+    <filter
+       inkscape:collect="always"
+       style="color-interpolation-filters:sRGB"
+       id="filter911"
+       x="-0.048"
+       y="-0.048"
+       width="1.096"
+       height="1.096">
+      <feGaussianBlur
+         inkscape:collect="always"
+         stdDeviation="0.052916665"
+         id="feGaussianBlur913" />
+    </filter>
+  </defs>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     style="mix-blend-mode:normal;filter:url(#filter1782)">
+    <circle
+       style="mix-blend-mode:normal;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:0.212082;filter:url(#filter911)"
+       id="path846"
+       cx="-1.3257245"
+       cy="1.320441"
+       transform="matrix(-1.3645045,0,0,1.3645958,0.83687623,0.84396516)"
+       inkscape:export-filename="/Users/qper/Documents/Projects/2021/ExperimentellesMethodenPraktikum/manual_tracking/gaussian_blob_100.png"
+       inkscape:export-xdpi="640"
+       inkscape:export-ydpi="640"
+       r="1.3229166" />
+  </g>
+</svg>

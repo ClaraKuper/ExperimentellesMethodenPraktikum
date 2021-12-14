@@ -56,6 +56,7 @@ df$mouse_trace_x
 df$mouse_trace_y
 
 # 2d) Was steht in den anderen Spalten?
+<<<<<<< HEAD
 # dur - die Dauer eines Trials (sollte immer 1200 ms sein)
 df$dur
 # start_time - ein Zeitstempel, wann der Trial angefangen hat
@@ -70,6 +71,12 @@ df$side
 df$splitTime
 #df stimulus
 df$stimulus
+=======
+# dur - die Dauer eines Trials (sollte immer 2000 ms sein)
+df$dur
+# start_time - ein Zeitstempel, wann der Trial angefangen hat
+df$start_time
+>>>>>>> 68d76de0c04754f058da8c6adb82b07a53c176fe
 
 ################################################################################
 ## AUFGABE: SCHAUEN SIE SICH MINDESTENS 3 WEITERE ZEILEN AN UND ERLÄUTERN SIE ##
@@ -120,7 +127,9 @@ any(is.na(trial_df))
 # Zeit mit dem Finger auf dem Punkt war. die Information, ob der Punkt die ganze 
 # Zeit angetippt wurde, finden wir in der Spalte "interruptedResponse"
 print("Es gab Trials, bei denen die Antwort unterbrochen wurde: ")
+
 any(df$interruptedResponse == 'true')
+
 #(kurze Anmerkung, 'true' ist hier ein Text (string), 
 # nicht der logische Operator TRUE)
 
@@ -142,7 +151,7 @@ trial_df <- trial_df[trial_df$interruptedResponse == 'false', ]
 
 # Datenklasse einer einzelnen Spalte anzeigen:
 class(trial_df$angle)
-# Datenklassen aller Spalten anzeigen:
+# Datenklasen aller Spalten anzeigen:
 str(trial_df)
 
 ###############################################################
@@ -232,6 +241,7 @@ for (row in 1:nrow(trial_df)){
 # Für jede einzelne Versuchsperson ... 
 for (vp in vps){
   # ... filtern wir den Datensatz nach den Daten dieser Person
+
   v_df <- trial_df[trial_df$jatosID == vp, ]
   
   # ... erstellen wir einen leeren plot
@@ -593,4 +603,3 @@ write.csv(minimal_df, "./preprocessed/minimal_dataframe.csv")
 ## LEERE EINTRÄGE, SIEHT DAS FORMAT SINNVOLL AUS?         ##
 ## ANTWORT: ##
 ############################################################
-
