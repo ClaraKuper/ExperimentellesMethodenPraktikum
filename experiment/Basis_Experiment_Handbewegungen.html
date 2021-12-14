@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+    <title>Experiment Manual Tracking</title>
+    <!-- load jsPsych scripts -->
+    <script src="jspsych-6.3.1/jspsych.js"></script>
+    <!-- plugin basic button responses -->
+    <script src="jspsych-6.3.1/plugins/jspsych-html-button-response.js"></script>
+    <script src="jspsych-6.3.1/plugins/jspsych-survey-text.js"></script>
+    <script src="jspsych-6.3.1/plugins/jspsych-instructions.js"></script>
+    <script src="jspsych-6.3.1/plugins/jspsych-survey-likert.js"></script>
+    <script src="jspsych-6.3.1/plugins/jspsych-fullscreen.js"></script>
+    <script src="jspsych-6.3.1/plugins/jspsych-survey-multi-choice.js"></script>
+    <!-- custom plugin dot tracking -->
+    <script src="jspsych-6.3.1/plugins/custom-manual-tracking.js"></script>
+    <!-- load jatos -->
+    <script src="jatos.js"></script>
+    <!-- basic values -->
+    <!-- load basic variables -->
+    <script src="common_vars.js"></script>
+    <!-- define some css styles -->
+    <link href="styles.css" rel="stylesheet" type="text/css">
+    <!-- load a loop function -->
+    <script type="text/javascript" src="loops.js"></script>
+    <!-- css import -->
+    <link rel="stylesheet" type="text/css" href="jspsych-6.3.1/css/jspsych.css">
+    <!-- use the line below to prevent user scaling and marking -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+</head>
+
+<body bgcolor='gray'>
+<script>
+    // define variables for the experiment
+    let nTrials = 1;//24; // number of trials per condition
+    let trialDuration = 1200; //duration of the trial (longer than Spering et al)
+    let side = ['l', 'r']; // first side where the stimulus appears. l = left, r = right (relative to center)
+    let angle = [0, 45, 90, 135, 180, 225, 270, 315]; // in which direction the stimulus moves (same as in Spering et al)
+    let splitTime = trialDuration / 2; // the mean time when the stimulus splits (half the full duration)
+    let splitJitter = 100; // jitter when the stimulus splits (the random jitter in positive and negative direction)
+    let waitAfter = 500; // how long we will wait at the end of the trial in ms
+    let fixTime = 0; // how long the participant keeps their hand on the dot before it moves
+    let speed = ppdva * 10.5; // how many pixels the stimulus moves in 1 second (same as Spering et al)
+    let block = 0;
+    let trialN = 0;
+    let doStudy = true;
+    let experiment = [];
+
+    // make trial structure - this creates a list of all combinations of sides, angles and a randomized time point for the split
+    let timelineVariables = create_trials(nTrials, trialDuration, side, angle, splitTime, splitJitter, waitAfter, fixTime);
+
+    // study information
+    let instruction_form = {
+        type: 'html-button-response',
+        stimulus: '<p>Bitten laden und lesen Sie die <a href="Einwilligung_TrackingBewegungen.pdf" ' +
+            'target="_blank">Versuchspersonen Informationen</a>.</p>',
+        choices: ['Ich habe die Informationen erhalten und gelesen.'],
+        data: {
+            test_part: 'general_download',
+        }
+    };
+    timeline.push(instruction_form);
+
+    // consent check
+    let agree_participation = {
+        type: 'html-button-response',
+        stimulus: "<p>Ich erkläre hiermit meine freiwillige Einwilligung zur Teilnahme an der geplanten Untersuchung " +
+            "und zur Verarbeitung meiner Daten im Rahmen der Studie „Kontinuierliche Handbewegungen am Touchscreen“, " +
+            "wie im Informationsteil beschrieben. </p>",
+        choices: ['Ja', 'Nein'],
+        data: {
+            test_part: 'general_participation',
+        },
+        on_finish: function(data) {
+            if (parseInt(data.response) === 1) {
+                doStudy = false;
+            }
+        },
+    };
+    timeline.push(agree_participation);
+
+    // full screen agreement
+    let confirm_fullscreen = {
+        type: "fullscreen",
+        message: ["<p>Bitte wechseln Sie mit dem Knopf unten in den Vollbild Modus.</p>"],
+        fullscreen_mode: true,
+        button_label: 'Vollbild',
+        data: {
+            test_part: 'fullscreen_request',
+        },
+    };
+    experiment.push(confirm_fullscreen);
+
+    // basic instructions
+
+    let instructions = {
+        type: 'instructions',
+        pages: [
+            'Willkommen zum Experiment. In dieser Studie untersuchen wir kontinuierliche Handbewegungen am Touchscreen.',
+            'Jeder Durchlauf beginnt mit einem weißen Punkt, rechts oder links am Bildschirmrand. Legen sie Ihren Finger ' +
+            'auf diesen Punkt, um den Versuchsdurchlauf zu starten.', 'Sobald sie den Punkt antippen, bewegt dieser sich' +
+            ' horizontal auf die andere Seite vom Bildschirm. Folgen Sie dem Punkt so genau wie möglich mit Ihrem Finger.',
+            'In einigen Durchgängen wird sich ein zweiter Punkt ablösen. Bitte ignorieren Sie diesen zweiten Punkt ' +
+            'und folgen Sie weiterhin dem ersten Punkt.', 'Klicken Sie auf WEITER, um das Experiment zu starten.'],
+        show_clickable_nav: true,
+        button_label_next: 'WEITER',
+        button_label_previous: 'ZURÜCK',
+        data:{
+            test_part: 'instructions',
+        }
+
+    };
+    experiment.push(instructions);
+
+    // block_message
+    let block_message = {
+        type: 'html-button-response',
+        stimulus: function () {
+            return "<p>Dies ist Block " + block + " von 6.</p>"
+        },
+        choices: ['Block starten.'], // block start button
+        data: {
+            test_part: 'block',
+        },
+    };
+
+    // put the block message in a conditional loop that is called on every 64th trial
+    let conditional_block = {
+        timeline: [block_message],
+        conditional_function: function () {
+            if (trialN % 64 === 0) {
+                // increase the block count by one
+                block = block + 1;
+                return true
+            } else {
+                return false
+            }
+        },
+    };
+
+    // define the main trial for the experiment
+    let trial = {
+        type: "manual-tracking", // calls the custom plugin
+        stimulus: jsPsych.timelineVariable('visibleTarget'), // the visible buttons are the white dot
+        responseArea: jsPsych.timelineVariable('invisibleTarget'), // the invisible button is the area around the target where a touch response is accepted
+        side: jsPsych.timelineVariable('side'), // indicates if the side is left or right
+        angle: jsPsych.timelineVariable('angle'), // indicates in which angle the new dot splits off
+        splitTime: jsPsych.timelineVariable('splitTime'), // indicates when the new dot splits off
+        fixTime: jsPsych.timelineVariable('fixTime'), // indicates how long the participants keeps their finger in the start position before the dot starts moving
+        trial_duration: trialDuration, // indicates how long the trial lasts in total
+        waitAfter: waitAfter, // how long to wait after the trial ended before the next trial starts
+        speed: speed, // indicates how many pixels/second the dot moves
+        dummy: false, // hand or mouse tracking (True = Mouse Tracking)
+        // this is already for saving important information
+        data: {
+            // assign relevant data
+            test_part: 'trial', // the part of the experiment
+            angle: jsPsych.timelineVariable('angle'),  // the angle at which the distractor moved away
+            splitTime: jsPsych.timelineVariable('splitTime'), // the time when the distractor moved away
+            side: jsPsych.timelineVariable('side'), // the side where the distractor appeared
+            trialID: jsPsych.timelineVariable('trialID'), // the ID of the trial
+
+        },
+        on_finish: function (data) {
+            // evaluate if the there were any mistakes to give the correct feedback
+            interruptedResponse = data.interruptedResponse; // were the answers given in order
+            trialN = trialN + 1;
+        }
+    };
+
+    // display feedback
+    let feedback = {
+        type: 'html-button-response',
+        trialID: jsPsych.timelineVariable('trialID'),
+        stimulus: function () {
+            // evaluate which feedback should be shown
+            if (interruptedResponse) {
+                return "<p>Bitte verfolgen Sie den Zielreiz.</p>"
+            } else {
+                return "<p>Gut gemacht.</p>"
+            }
+        },
+        post_trial_gap: 0, // needs to be zero to avoid waiting times when the trial is skipped
+        choices: [''], // don't display choices
+        button_html: '', // don't display buttons
+        trial_duration: 1500, // display the feedback for 1500 ms
+        data: {
+            test_part: 'feedback',
+        },
+    };
+
+    // define a test procedure
+    let trial_timelineVariables = {
+        timeline: [conditional_block, trial, feedback], // one trial and one feedback will be repeated after each other
+        timeline_variables: timelineVariables, // our design structure provides the timeline variables
+        randomize_order: true, // our design structure will be shown in a random order
+    };
+    experiment.push(trial_timelineVariables);
+
+    // questionnaire intro
+    let questionnaire_intro = {
+        type: 'html-button-response',
+        stimulus: "<p>Sie haben den Hauptteil des Experiments erfolgreich abgschlossen. Vielen Dank!" +
+            " Wir haben noch ein paar Fragebögen für Sie.</p>",
+        post_trial_gap: 0, // needs to be zero to avoid waiting times when the trial is skipped
+        choices: ['Weiter zu den Fragebögen'], // don't display choices
+        data: {
+            test_part: 'intro_questionnaire',
+        },
+    };
+    experiment.push(questionnaire_intro);
+
+    // check on any other comments
+    let pseudo_code = {
+        type: 'survey-text',
+        questions: [
+            {
+                prompt: "Erstellen Sie sich Ihren Versuchspersonen Code wie folgt: Der 1. Buchstabe Ihrer Geburtsstadt, " +
+                    "der 1. Buchstabe der Straße Ihrer Wohnung, Ihr Geburtsmonat als Zahl (01 - 12), der Geburtsmonat" +
+                    " Ihres Vaters als Zahl (01 - 12). Beispiel: Geboren Berlin, wohnhaft Rudower Chausse, geboren im März, Vater geboren im Juli: BR0307",
+                placeholder: "Geben Sie hier Ihren Code ein."
+            },
+        ],
+        data: {
+            test_part: 'code'
+        },
+    };
+    experiment.push(pseudo_code);
+
+    // demographic questionnaire
+    // create arrays
+    let scale = ["Konzentriert", "Etwas konzentriert", "Neutral", "Etwas abgelenkt", "Abgelenkt"];
+    let finger_choice = ['Zeigefinger', 'Daumen', 'Mehrere', 'Anderer'];
+    let yesno_responses = ['Ja', 'Nein']
+    let handedness_responses = ['Links', 'Rechts', 'Beidhändig']
+    let glasses_use = ['Brille', 'Kontaktlinsen', 'Keine Sehhilfe']
+
+
+    // check for concentration
+    let focus = {
+        type: 'survey-likert',
+        questions: [
+            {
+                prompt: "<p>Wie abgelenkt oder konzentriert waren Sie während des Experiments.</p>",
+                name: 'control',
+                labels: scale,
+                required: true
+            }
+        ],
+        choices: ['Nächste Frage'],
+        data: {
+            test_part: 'outro_concentration',
+        },
+    };
+    experiment.push(focus);
+
+    // check eye sight
+    let sight = {
+        type: 'html-button-response',
+        stimulus: "<p>Haben sie normale (oder zu normal korrigierte) Sehstärke?</p>",
+        choices: yesno_responses,
+        data: {
+            test_part: 'outro_sight',
+        },
+    };
+    experiment.push(sight);
+
+    // check if the participant wears glasses
+    let glasses = {
+        type: 'html-button-response',
+        stimulus: "<p>Welche dieser Sehhilfen tragen Sie aktuell?</p>",
+        choices: glasses_use,
+        data: {
+            test_part: 'outro_glasses',
+        },
+    };
+    experiment.push(glasses);
+
+    // check which finger was used
+    let finger = {
+        type: 'html-button-response',
+        stimulus: "<p>Mit welchem Finger haben Sie das Experiment durchgeführt?</p>",
+        choices: finger_choice,
+        data: {
+            test_part: 'outro_finger',
+        },
+    };
+    experiment.push(finger);
+
+    // check if fullscreen mode was used
+    let screen = {
+        type: 'html-button-response',
+        stimulus: "<p>Waren Ihr Bildschirm während des gesamten Experiments im Vollbild-Modus?</p>",
+        choices: yesno_responses,
+        data: {
+            test_part: 'outro_screen',
+        },
+    };
+    experiment.push(screen);
+
+    // ask for handedness
+    let handedness = {
+        type: 'html-button-response',
+        stimulus: "<p>Welche Hand ist Ihre dominante Hand?</p>",
+        choices: handedness_responses,
+        data: {
+            test_part: 'outro_hand',
+        },
+    };
+    experiment.push(handedness);
+
+    // ask for hand use
+    let hand_use = {
+        type: 'html-button-response',
+        stimulus: "<p>Welche Hand haben Sie in diesem Experiement benutzt?</p>",
+        choices: handedness_responses,
+        data: {
+            test_part: 'outro_hand',
+        },
+    };
+    experiment.push(hand_use);
+
+    // check on any other comments
+    let comments = {
+        type: 'survey-text',
+        questions: [
+            {
+                prompt: "Ist Ihnen während des Experiments etwas aufgefallen, dass Sie uns mitteilen möchten?",
+                placeholder: "Geben Sie hier Ihre Antwort ein."
+            },
+        ],
+        data: {
+            test_part: 'outro_comments'
+        },
+    };
+    experiment.push(comments);
+
+    // gaming questionnaire
+    let gaming_survey = {
+        type: 'survey-multi-choice',
+        questions: [
+            {
+                prompt: "Auf welchem dieser Geräte zocken/ daddeln Sie am meisten?",
+                name: 'Spielgerät',
+                options: ['Smartphone', 'Tablet', 'Laptop', 'PC', 'Spielekonsole'],
+                required: false,
+                horizontal: true
+            },
+            {
+                prompt: "Wie steuern Sie In-Game?",
+                name: 'Spielsteuerung',
+                options: ['Touchscreen', 'Trackpad', 'Maus', 'Controller'],
+                required: false,
+                horizontal: true
+            },
+            {
+                prompt: "An wie vielen Tagen in der Woche zocken/ daddeln Sie?",
+                name: 'Spielhäufigkeit',
+                options: ['garnicht', '1-2mal', '3-4mal', '5-6mal', 'jeden Tag'],
+                required: false,
+                horizontal: true
+            },
+            {
+                prompt: "Wenn Sie an einem Tag zocken/ daddeln, wie viele Stunden durchschnittlich?",
+                name: 'Spieldauer',
+                options: ['1h', '2h', '3h', '4h', '>5h'],
+                required: false,
+                horizontal: true
+            }
+        ],
+        randomize_question_order: false, // don't randomize the order of questions
+        preamble: ['Bitte beziehen Sie sich bei der Beantwortung dieser Frage auf den Zeitraum der letzten 6 Monate'], // display this statement at the top of the page above all the questions
+        button_label: 'Nächste Frage', // Label of the button
+        autocomplete: false, // don't allow autocomplete
+        array: true, //
+        data: {
+            test_part: 'gaming_questionnaire',
+        },
+    };
+    experiment.push(gaming_survey);
+
+    // check on any other comments
+    let mail = {
+        type: 'survey-text',
+        questions: [
+            {
+                prompt: "Wenn Sie Feedback zu Ihrer Performance und Informationen zu unseren Ergebnissen erhalten möchten, " +
+                    "können Sie hier Ihre E-Mail-Adresse angeben.",
+                placeholder: "Geben Sie hier Ihre E-Mail Adresse an."
+            },
+        ],
+        data: {
+            test_part: 'mail'
+        },
+    };
+    experiment.push(mail);
+
+    let experiment_conditional = {
+        timeline: experiment,
+        conditional_function: function(){
+          return(doStudy)
+        },
+    };
+    timeline.push(experiment_conditional);
+
+
+    // debrief block
+    let debrief_block = {
+        type: 'html-button-response',
+        stimulus: "<p>Das Experiment ist jetzt vorbei. Danke für Ihre Teilnahme." +
+            " Sobald diese Nachricht nicht mehr angezeigt wird, können Sie das Fenster schließen.</p>",
+        post_trial_gap: 0, // needs to be zero to avoid waiting times when the trial is skipped
+        choices: [''], // don't display choices
+        button_html: '', // don't display buttons
+        trial_duration: 5000, // display the goodbye message for 5000 ms
+        data: {
+            test_part: 'debrief',
+        },
+    };
+    timeline.push(debrief_block);
+
+    // start the experiment
+    jatos.onLoad(function () {
+
+        // add some general information to the data
+        jsPsych.data.addProperties({
+            jatosID: jatos.workerId, // id of the subject in jatos
+            screenWidth: window.innerWidth, // screen width in px
+            screenHeight: window.innerHeight, // screen height in px
+        });
+
+        jsPsych.init({
+            timeline: timeline, // use the timeline to run the experiment
+            on_finish: function () {
+                let allData = jsPsych.data.get();
+                let resultJson = jsPsych.data.get().json();
+                jatos.submitResultData(resultJson, jatos.startNextComponent);
+                jatos.uploadResultFile(allData.csv(), "trialData.csv")
+            },
+        });
+    });
+
+</script>
+</body>
+</html>

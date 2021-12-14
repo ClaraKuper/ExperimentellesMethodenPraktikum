@@ -1,3 +1,10 @@
 .DS_Store
+.Rhistory
 /.idea
+/Experimente_Studis
 Manual_Tracking.html
+/raw
+/preprocessed
+raw/
+preprocessed/
+
